@@ -1,6 +1,6 @@
 # Long Memory Dynamic Graph Neural Network
 
-This repository is the implementation of the experiments in the following papers:
+This repository is the implementation of the experiments in the following paper:
 
 Baseline Methods used in this paper are as follows:
 - [DynGEM](https://arxiv.org/pdf/1805.11273.pdf):&nbsp; Palash Goyal, Nitin Kamra, Xinran He, Yan Liu. DynGEM: Deep Embedding Method for Dynamic Graphs (2018). [1]
