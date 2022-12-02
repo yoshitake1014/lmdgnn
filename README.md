@@ -1,10 +1,11 @@
-# Long Memory Dynamic Graph Neural Network
+<!-- # Long Memory Dynamic Graph Neural Network -->
+# Graph neural networks based on long memory model for dynamic graph prediction
 
 This repository is the implementation of the experiments in the following papers:
 
-- [DynGEM](https://arxiv.org/pdf/1805.11273.pdf) Palash Goyal, Nitin Kamra, Xinran He, Yan Liu. DynGEM: Deep Embedding Method for Dynamic Graphs (2018).
-- [dyngraph2vec](https://arxiv.org/pdf/1809.02657.pdf) Palash Goyal, Sujit Rokka Chhetri, Arquimedes Canedo. dyngraph2vec: Capturing Network Dynamics using Dynamic Graph Representation Learning (2018).
-
+Baseline Methods are used in this paper as follows:
+- [DynGEM](https://arxiv.org/pdf/1805.11273.pdf):&nbsp; Palash Goyal, Nitin Kamra, Xinran He, Yan Liu. DynGEM: Deep Embedding Method for Dynamic Graphs (2018). []
+- [dyngraph2vec](https://arxiv.org/pdf/1809.02657.pdf):&nbsp; Palash Goyal, Sujit Rokka Chhetri, Arquimedes Canedo. dyngraph2vec: Capturing Network Dynamics using Dynamic Graph Representation Learning (2018). []
 
 ## Table of contents
 
@@ -14,6 +15,9 @@ This repository is the implementation of the experiments in the following papers
 - [References](#references)
 
 ## Datasets
+Datasets are used in this paper as follows:
+- Autonomous Systems: Available from http://snap.stanford.edu/data/as-733.html
+- HEP-PH: Available from http://snap.stanford.edu/data/as-733.html
 
 ## Usage
 
