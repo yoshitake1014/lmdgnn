@@ -8,7 +8,6 @@ This repository is the implementation of the experiments in the following paper:
 - [Methods](#methods)
 - [Setup](#setup)
 - [Usage](#usage)
-- [Dependencies](#dependencies)
 - [References](#references)
 
 ## Datasets
@@ -24,8 +23,6 @@ Baseline Methods used in this paper are as follows:
 ## Setup
 
 ## Usage
-
-## Dependencies
 
 ## References
 
