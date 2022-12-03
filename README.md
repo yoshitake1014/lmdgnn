@@ -2,13 +2,11 @@
 
 This repository is the implementation of the experiments in the following paper:
 
-Baseline Methods used in this paper are as follows:
-- [DynGEM](https://arxiv.org/pdf/1805.11273.pdf):&nbsp; Palash Goyal, Nitin Kamra, Xinran He, Yan Liu. DynGEM: Deep Embedding Method for Dynamic Graphs (2018). [1]
-- [dyngraph2vec](https://arxiv.org/pdf/1809.02657.pdf):&nbsp; Palash Goyal, Sujit Rokka Chhetri, Arquimedes Canedo. dyngraph2vec: Capturing Network Dynamics using Dynamic Graph Representation Learning (2018). [2]
-
 ## Table of contents
 
 - [Datasets](#datasets)
+- [Methods](#methods)
+- [Setup](#setup)
 - [Usage](#usage)
 - [Dependencies](#dependencies)
 - [References](#references)
@@ -17,6 +15,13 @@ Baseline Methods used in this paper are as follows:
 Datasets used in this paper are as follows:
 - Autonomous Systems: Available from http://snap.stanford.edu/data/as-733.html
 - HEP-PH: Available from http://snap.stanford.edu/data/as-733.html
+
+## Methods
+Baseline Methods used in this paper are as follows:
+- [DynGEM](https://arxiv.org/pdf/1805.11273.pdf):&nbsp; Palash Goyal, Nitin Kamra, Xinran He, Yan Liu. DynGEM: Deep Embedding Method for Dynamic Graphs (2018). [1]
+- [dyngraph2vec](https://arxiv.org/pdf/1809.02657.pdf):&nbsp; Palash Goyal, Sujit Rokka Chhetri, Arquimedes Canedo. dyngraph2vec: Capturing Network Dynamics using Dynamic Graph Representation Learning (2018). [2]
+
+## Setup
 
 ## Usage
 
