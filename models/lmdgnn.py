@@ -1,3 +1,4 @@
+import networkx as nx
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
@@ -36,5 +37,8 @@ class Decoder(nn.Module):
 
 
 class LMDGNN():
-    def __init__(self,args):
+    def __init__(self,
+                args,
+                graphs,
+                num_nodes):
         pass
