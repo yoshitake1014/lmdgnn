@@ -19,6 +19,7 @@ args = parser.parse_args()
 def main():
     dataset = args.datasets
     if dataset == 'as':
+        BATCH_SIZE = 50
         EMB_SIZE = 150
         NUM_NODES = 7716
         LEARNING_RATE = 1e-3
@@ -31,10 +32,9 @@ def main():
         listdir.sort()
         graphs = []
         #for i in range(len(listdir)):
-        for i in range(5):
+        for i in range(TIME_STEP):
             G = nx.read_gpickle(f'datasets/as_733/month_{i+1}_graph.gpickle')
             graphs.append(G)
-
     elif dataset == 'hep':
         pass
     else:
@@ -44,41 +44,41 @@ def main():
     if method == 'lmdgnn':
         model = lmdgnn.LMDGNN(args,NUM_NODES,EMB_SIZE)
 
-        def train(dataloader, model, loss_fn, optimizer):
-            pass
-
-        def test(dataloader, model):
-            pass
-
         for i in range(TIME_STEP-1):
             graph = graphs[i]
-            target_graph = graphs[i+1]
+            next_graph = graphs[i+1]
 
             G_cen = nx.degree_centrality(graph)
             G_cen = sorted(G_cen.items(), key=lambda item:item[1], reverse=True)
 
+            # Training
             sample_nodes = []
-            target_nodes = []
+            sample_next_nodes = []
             for j in range(SAMPLE_SIZE):
-                x = [0]*7716
-                y = [0]*7716
-                node = G_cen[j][0]
-                neighbors = graph.neighbors(node)
-                target_neighbors = target_graph.neighbors(node)
-                for k in neighbors:
+                x = [0]*NUM_NODES
+                y = [0]*NUM_NODES
+                z = G_cen[j][0]
+                neighbors_1 = graph.neighbors(z)
+                neighbors_2 = next_graph.neighbors(z)
+                for k in neighbors_1:
                     x[k-1] = 1
                 sample_nodes.append(x)
-                for k in target_neighbors:
+                for k in neighbors_2:
                     y[k-1] = 1
-                target_nodes.append(y)
+                sample_next_nodes.append(y)
 
             X = torch.Tensor(sample_nodes)
-            y = torch.Tensor(target_nodes)
+            y = torch.Tensor(sample_next_nodes)
             train_dataset = TensorDataset(X,y)
+            train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE)
 
             loss_fn = nn.MSELoss()
             optimizer = torch.optim.SGD(model.parameters(),lr=LEARNING_RATE)
 
+            lmdgnn.train(train_dataloader, model, loss_fn, optimizer)
+
+            # Testing
+            print('-'*50)
     elif method == 'dyngem':
         pass
     else:
