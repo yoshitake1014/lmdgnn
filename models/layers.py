@@ -3,15 +3,15 @@ from torch import nn
 
 
 class Encoder(nn.Module):
-    def __init__(self, input_size, output_size):
+    def __init__(self, input_size, hidden_size, output_size):
         super(Encoder, self).__init__()
 
         self.encoder = nn.Sequential(
-                nn.Linear(input_size, 500),
+                nn.Linear(input_size, hidden_size[0]),
                 nn.ReLU(),
-                nn.Linear(500, 300),
+                nn.Linear(hidden_size[0], hidden_size[1]),
                 nn.ReLU(),
-                nn.Linear(300, output_size),
+                nn.Linear(hidden_size[1], output_size),
                 nn.ReLU()
                 )
 
@@ -20,15 +20,15 @@ class Encoder(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, input_size, output_size):
+    def __init__(self, input_size, hidden_size, output_size):
         super(Decoder, self).__init__()
 
         self.decoder = nn.Sequential(
-                nn.Linear(input_size, 300),
+                nn.Linear(input_size, hidden_size[1]),
                 nn.ReLU(),
-                nn.Linear(300, 500),
+                nn.Linear(hidden_size[1], hidden_size[0]),
                 nn.ReLU(),
-                nn.Linear(500, output_size),
+                nn.Linear(hidden_size[0], output_size),
                 nn.Sigmoid()
                 )
 

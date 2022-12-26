@@ -9,16 +9,17 @@ from models.layers import Encoder, Decoder
 
 
 class LMDGNN(nn.Module):
-    def __init__(self, args, num_nodes, emb_size):
+    def __init__(self, args, num_nodes, hidden_size, emb_size):
         super(LMDGNN, self).__init__()
 
         self.args = args
         self.num_nodes = num_nodes
+        self.hidden_size = hidden_size
         self.emb_size = emb_size
 
-        self.enc = Encoder(num_nodes, emb_size)
+        self.enc = Encoder(num_nodes, hidden_size, emb_size)
         self.mlstms = MLSTMs(emb_size, emb_size, num_nodes)
-        self.dec = Decoder(emb_size, num_nodes)
+        self.dec = Decoder(emb_size, hidden_size, num_nodes)
 
     def forward(self, x):
         nodes_i = x[:, self.num_nodes]

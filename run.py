@@ -27,6 +27,7 @@ def main():
         BATCH_SIZE = 2000
         EMB_SIZE = 150
         EPOCH = 1
+        HIDDEN_SIZE = [500, 300,]
         NUM_NODES = 7716
         LEARNING_RATE = 1e-3
         L2_NORM = 1e-2
@@ -48,9 +49,9 @@ def main():
     method = args.methods
 
     if method == 'lmdgnn':
-        model = lmdgnn.LMDGNN(args, NUM_NODES, EMB_SIZE)
+        model = lmdgnn.LMDGNN(args, NUM_NODES, HIDDEN_SIZE, EMB_SIZE)
 
-        for i in range(1,TIME_STEP-1):
+        for i in range(1, TIME_STEP-1):
             graph_1 = graphs[i-1]
             graph_2 = graphs[i]
             graph_3 = graphs[i+1]
@@ -105,9 +106,9 @@ def main():
             lmdgnn.test(test_dataloader, model, NUM_NODES)
 
     elif method == 'dyngem':
-        model = dyngem.DynGEM(args, NUM_NODES, EMB_SIZE)
+        model = dyngem.DynGEM(args, NUM_NODES, HIDDEN_SIZE, EMB_SIZE)
 
-        for i in range(1,TIME_STEP-1):
+        for i in range(1, TIME_STEP-1):
             graph_1 = graphs[i-1]
             graph_2 = graphs[i]
             graph_3 = graphs[i+1]
