@@ -1,78 +1,55 @@
+from math import gamma
+
 import networkx as nx
+from sklearn.metrics import roc_curve, roc_auc_score
 import torch
 from torch import nn
 
-
-class Encoder(nn.Module):
-    def __init__(self, input_size, output_size):
-        super(Encoder, self).__init__()
-
-        self.encoder = nn.Sequential(
-                nn.Linear(input_size, 500),
-                nn.ReLU(),
-                nn.Linear(500, 300),
-                nn.ReLU(),
-                nn.Linear(300, output_size),
-                nn.ReLU()
-                )
+from models.layers import Encoder, Decoder
 
 
-    def forward(self, x):
-        return self.encoder(x)
+class LMDGNN(nn.Module):
+    def __init__(self, args, num_nodes, emb_size):
+        super(LMDGNN, self).__init__()
 
+        self.args = args
+        self.num_nodes = num_nodes
+        self.emb_size = emb_size
 
-class Decoder(nn.Module):
-    def __init__(self, input_size, output_size):
-        super(Decoder, self).__init__()
-
-        self.decoder = nn.Sequential(
-                nn.Linear(input_size, 300),
-                nn.ReLU(),
-                nn.Linear(300, 500),
-                nn.ReLU(),
-                nn.Linear(500, output_size),
-                nn.Sigmoid()
-                )
-
+        self.enc = Encoder(num_nodes, emb_size)
+        self.mlstms = MLSTMs(emb_size, emb_size, num_nodes)
+        self.dec = Decoder(emb_size, num_nodes)
 
     def forward(self, x):
-        return self.decoder(x)
+        nodes_i = x[:, self.num_nodes]
+        x = x[:, :self.num_nodes].to(torch.float32)
+
+        x = self.enc(x)
+        x = self.mlstms(x, nodes_i)
+        x = self.dec(x)
+        return x
 
 
-class MLSTMCell(nn.Module):
-    def __init__(self, input_size, hidden_size):
-        super(MLSTMCell, self).__init__()
+class MLSTMs(nn.Module):
+    def __init__(self, input_size, hidden_size, num_nodes):
+        super(MLSTMs, self).__init__()
 
         self.input_size = input_size
         self.hidden_size = hidden_size
-        self.lag_k = 100
+        self.num_nodes = num_nodes
 
-        self.d_gate = nn.Linear(input_size+hidden_size, input_size)
-        self.i_gate = nn.Linear(input_size+hidden_size, input_size)
-        self.o_gate = nn.Linear(input_size+hidden_size, input_size)
-        self.c_gate = nn.Linear(input_size+hidden_size, input_size)
+        self.mlstms = [MLSTM(input_size, hidden_size)]*num_nodes
 
-        self.sigmoid = nn.Sigmoid()
-        self.tanh = nn.Tanh()
+    def forward(self, x, nodes_i):
+        batch_size = x.size(0)
 
+        res = torch.Tensor()
+        for batch in range(batch_size):
+            tmp = self.mlstms[nodes_i[batch].item()](x[batch])
+            res = torch.cat([res, tmp], dim=0)
+        res = torch.reshape(res, (-1, x.size(1)))
 
-    def forward(self, x, hidden_state, memory_cell):
-        if hidden_state is None:
-            hidden_state = torch.zeros(1, self.hidden_size)
-        if memory_cell is None:
-            memory_cell = torch.zeros(1, self.hidden_size)
-
-        cat = torch.cat((x, hidden_state), 1)
-        d = self.d_gate(cat)
-        d = self.sigmoid(d) * 0.5
-        i = self.i_gate(cat)
-        i = self.sigmoid(i)
-        o = self.o_gate(cat)
-        o = self.sigmoid(o)
-        c_tilde = self.c_gate(cat)
-        c_tilde = self.tanh(c_tilde)
-
-        return
+        return res
 
 
 class MLSTM(nn.Module):
@@ -85,66 +62,96 @@ class MLSTM(nn.Module):
         self.memory_cell = None
         self.mlstm_cell = MLSTMCell(self.input_size, self.hidden_size)
 
-
     def forward(self, x):
-        x, self.hidden_state, self.memory_cell =\
+        self.hidden_state, self.memory_cell =\
         self.mlstm_cell(x, self.hidden_state, self.memory_cell)
-        return x
+        return self.hidden_state
 
 
-class LMDGNN(nn.Module):
-    def __init__(self, args, num_nodes, emb_size):
-        super(LMDGNN, self).__init__()
+class MLSTMCell(nn.Module):
+    def __init__(self, input_size, hidden_size):
+        super(MLSTMCell, self).__init__()
 
-        self.enc = Encoder(num_nodes, emb_size)
-        self.dec = Decoder(emb_size, num_nodes)
-        self.mlstm = MLSTM(emb_size, emb_size)
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.lag_k = 100
+
+        self.d_u_gate = nn.Linear(hidden_size, input_size)
+        self.d_w_gate = nn.Linear(input_size, input_size)
+        self.i_u_gate = nn.Linear(hidden_size, input_size)
+        self.i_w_gate = nn.Linear(input_size, input_size)
+        self.o_u_gate = nn.Linear(hidden_size, input_size)
+        self.o_w_gate = nn.Linear(input_size, input_size)
+        self.c_u_gate = nn.Linear(hidden_size, input_size)
+        self.c_w_gate = nn.Linear(input_size, input_size)
+
+        self.sigmoid = nn.Sigmoid()
+        self.tanh = nn.Tanh()
+
+    def forward(self, x, hidden_state, memory_cell):
+        if hidden_state is None:
+            hidden_state = torch.zeros(self.hidden_size,
+                                       dtype=x.dtype,
+                                       device=x.device)
+        if memory_cell is None:
+            memory_cell = torch.zeros(self.hidden_size,
+                                      dtype=x.dtype,
+                                      device=x.device)
+
+        d_gate = torch.add(self.d_u_gate(hidden_state), self.d_w_gate(x))
+        d_gate = self.sigmoid(d_gate) * 0.5
+        i_gate = torch.add(self.i_u_gate(hidden_state), self.i_w_gate(x))
+        i_gate = self.sigmoid(i_gate)
+        o_gate = torch.add(self.o_u_gate(hidden_state), self.o_w_gate(x))
+        o_gate = self.sigmoid(o_gate)
+        c_tilde = torch.add(self.c_u_gate(hidden_state), self.c_w_gate(x))
+        c_tilde = self.tanh(c_tilde)
+
+        memory_cell = torch.mul(i_gate, c_tilde)
+        hidden_state = torch.mul(o_gate, self.tanh(memory_cell))
+
+        return hidden_state, memory_cell
 
 
-    def forward(self, x):
-        x = self.enc(x)
-        #x = self.mlstm(x)
-        x = self.dec(x)
-        return x
-
-
-def train(dataloader, model, loss_fn, optimizer):
-    THRESHOLD = 0.5
+def train(dataloader, model, loss_fn, optimizer, num_nodes):
+    size = len(dataloader.dataset)
 
     model.train()
 
-    for X,y in dataloader:
+    for i, (X,y) in enumerate(dataloader):
+        y = y[:, :num_nodes].to(torch.float32)
         X, y = X.to('cpu'), y.to('cpu')
 
         pred = model(X)
-        threshold = torch.Tensor([THRESHOLD])
-        pred = (pred >= threshold).type(torch.int)
         loss = loss_fn(pred, y)
-        loss.requires_grad = True
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-    print(f'Loss: {loss}')
+        loss, current = loss.item(), (i+1)*len(X)
+        print(f'Loss: {loss} [{current}/{size}]')
 
 
-def test(dataloader, model, loss_fn):
-    THRESHOLD = 0.5
+def test(dataloader, model, num_nodes):
+    size = len(dataloader.dataset)
 
     model.eval()
 
-    correct = 0
-    size = 0
+    #y_true = np.ndarray(0)
+    #y_score = np.ndarray(0)
     with torch.no_grad():
-        for X,y in dataloader:
-            X, y = X.to('cpu'), y.to('cpu')
+        for i, (X,y) in enumerate(dataloader):
+            y = y[:, :num_nodes].to(torch.float32)
+            X, y = X.to('cpu'), y.to('cpu').detach().numpy().copy().flatten()
 
-            pred = model(X)
-            threshold = torch.Tensor([THRESHOLD])
-            pred = (pred >= threshold).type(torch.int)
-            correct += (pred == y).type(torch.float).sum()
-            size += pred.numel()
-    correct /= size
+            pred = model(X).to('cpu').detach().numpy().copy().flatten()
 
-    print(f'Accuracy: {100*correct}')
+            #y_true = np.concatenate([y_true, y])
+            #y_score = np.concatenate([y_score, pred])
+
+            auc, current = roc_auc_score(y, pred), (i+1)*len(X)
+            print(f'AUC: {auc} [{current}/{size}]')
+
+    #auc = roc_auc_score(y_true, y_score)
+    #print(f'AUC: {auc}')
