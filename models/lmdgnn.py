@@ -1,3 +1,4 @@
+from collections import deque
 from math import gamma
 
 import networkx as nx
@@ -75,7 +76,8 @@ class MLSTMCell(nn.Module):
 
         self.input_size = input_size
         self.hidden_size = hidden_size
-        self.lag_k = 100
+        self.lag_k = 50
+        self.i_c_tilde = deque([None]*self.lag_k)
 
         self.d_u_gate = nn.Linear(hidden_size, input_size)
         self.d_w_gate = nn.Linear(input_size, input_size)
@@ -88,6 +90,36 @@ class MLSTMCell(nn.Module):
 
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
+
+    def compute_weights(self, d_i_gate):
+        weights = [1.]*(self.lag_k)
+        for k in range(self.lag_k):
+            try:
+                weights[k] = gamma(d_i_gate.item()+k) / (gamma(k+1)*gamma(d_i_gate.item()))
+            except:
+                pass
+        weights = torch.tensor(weights)
+        return weights
+
+    def compute_memory_cell(self, d_gate):
+        weights = torch.ones(self.lag_k,
+                             self.hidden_size,
+                             dtype=d_gate.dtype,
+                             device=d_gate.device)
+        for i in range(self.hidden_size):
+            weights[:, i] = self.compute_weights(d_gate[i])
+
+        memory_cell = []
+        for i in  range(self.hidden_size):
+            memory_cell_i = 0
+            for k in range(self.lag_k):
+                if self.i_c_tilde[k] is None:
+                    break
+                memory_cell_i += weights[k][i].item()*self.i_c_tilde[k][i].item()
+            memory_cell.append(memory_cell_i)
+        memory_cell = torch.tensor(memory_cell)
+
+        return memory_cell
 
     def forward(self, x, hidden_state, memory_cell):
         if hidden_state is None:
@@ -108,7 +140,10 @@ class MLSTMCell(nn.Module):
         c_tilde = torch.add(self.c_u_gate(hidden_state), self.c_w_gate(x))
         c_tilde = self.tanh(c_tilde)
 
-        memory_cell = torch.mul(i_gate, c_tilde)
+        self.i_c_tilde.pop()
+        self.i_c_tilde.appendleft(torch.mul(i_gate, c_tilde))
+
+        memory_cell = self.compute_memory_cell(d_gate)
         hidden_state = torch.mul(o_gate, self.tanh(memory_cell))
 
         return hidden_state, memory_cell

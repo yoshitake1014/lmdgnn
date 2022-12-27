@@ -24,14 +24,14 @@ def main():
     dataset = args.datasets
 
     if dataset == 'as':
-        BATCH_SIZE = 2000
+        BATCH_SIZE = 500
         EMB_SIZE = 150
         EPOCH = 1
         HIDDEN_SIZE = [500, 300,]
         NUM_NODES = 7716
         LEARNING_RATE = 1e-3
         L2_NORM = 1e-2
-        SAMPLE_SIZE = 2000
+        SAMPLE_SIZE = 500
         #TIME_STEP = 733
         TIME_STEP = 50
 
