@@ -1,7 +1,7 @@
 from collections import deque
 from math import gamma
 
-from sklearn.metrics import roc_curve, roc_auc_score
+from sklearn.metrics import roc_auc_score
 import torch
 from torch import nn
 
@@ -9,21 +9,20 @@ from models.layers import Encoder, Decoder
 
 
 class LMDGNN(nn.Module):
-    def __init__(self, args, num_nodes, hidden_size, emb_size):
+    def __init__(self, input_size, hidden_size, emb_size):
         super(LMDGNN, self).__init__()
 
-        self.args = args
-        self.num_nodes = num_nodes
+        self.input_size = input_size
         self.hidden_size = hidden_size
         self.emb_size = emb_size
 
-        self.enc = Encoder(num_nodes, hidden_size, emb_size)
-        self.mlstms = MLSTMs(emb_size, emb_size, num_nodes)
-        self.dec = Decoder(emb_size, hidden_size, num_nodes)
+        self.enc = Encoder(input_size, hidden_size, emb_size)
+        self.mlstms = MLSTMs(emb_size, emb_size, input_size)
+        self.dec = Decoder(emb_size, hidden_size, input_size)
 
     def forward(self, x):
-        nodes_i = x[:, self.num_nodes]
-        x = x[:, :self.num_nodes].to(torch.float32)
+        nodes_i = x[:, self.input_size]
+        x = x[:, :self.input_size].to(torch.float32)
 
         x = self.enc(x)
         x = self.mlstms(x, nodes_i)
@@ -38,7 +37,6 @@ class MLSTMs(nn.Module):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.num_nodes = num_nodes
-
         self.mlstms = [MLSTM(input_size, hidden_size)]*num_nodes
 
     def forward(self, x, nodes_i):
@@ -61,7 +59,7 @@ class MLSTM(nn.Module):
         self.hidden_size = hidden_size
         self.hidden_state = None
         self.memory_cell = None
-        self.mlstm_cell = MLSTMCell(self.input_size, self.hidden_size)
+        self.mlstm_cell = MLSTMCell(input_size, hidden_size)
 
     def forward(self, x):
         self.hidden_state, self.memory_cell =\
@@ -76,16 +74,16 @@ class MLSTMCell(nn.Module):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.lag_k = 50
-        self.i_c_tilde = deque([None]*self.lag_k)
+        self.lag = deque([None]*self.lag_k)
 
-        self.d_u_gate = nn.Linear(hidden_size, input_size)
-        self.d_w_gate = nn.Linear(input_size, input_size)
-        self.i_u_gate = nn.Linear(hidden_size, input_size)
-        self.i_w_gate = nn.Linear(input_size, input_size)
-        self.o_u_gate = nn.Linear(hidden_size, input_size)
-        self.o_w_gate = nn.Linear(input_size, input_size)
-        self.c_u_gate = nn.Linear(hidden_size, input_size)
-        self.c_w_gate = nn.Linear(input_size, input_size)
+        self.d_u_gate = nn.Linear(hidden_size, hidden_size)
+        self.d_w_gate = nn.Linear(input_size, hidden_size)
+        self.i_u_gate = nn.Linear(hidden_size, hidden_size)
+        self.i_w_gate = nn.Linear(input_size, hidden_size)
+        self.o_u_gate = nn.Linear(hidden_size, hidden_size)
+        self.o_w_gate = nn.Linear(input_size, hidden_size)
+        self.c_u_gate = nn.Linear(hidden_size, hidden_size)
+        self.c_w_gate = nn.Linear(input_size, hidden_size)
 
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
@@ -112,9 +110,9 @@ class MLSTMCell(nn.Module):
         for i in  range(self.hidden_size):
             memory_cell_i = 0
             for k in range(self.lag_k):
-                if self.i_c_tilde[k] is None:
+                if self.lag[k] is None:
                     break
-                memory_cell_i += weights[k][i].item()*self.i_c_tilde[k][i].item()
+                memory_cell_i += weights[k][i].item()*self.lag[k][i].item()
             memory_cell.append(memory_cell_i)
         memory_cell = torch.tensor(memory_cell)
 
@@ -139,8 +137,8 @@ class MLSTMCell(nn.Module):
         c_tilde = torch.add(self.c_u_gate(hidden_state), self.c_w_gate(x))
         c_tilde = self.tanh(c_tilde)
 
-        self.i_c_tilde.pop()
-        self.i_c_tilde.appendleft(torch.mul(i_gate, c_tilde))
+        self.lag.pop()
+        self.lag.appendleft(torch.mul(i_gate, c_tilde))
 
         #memory_cell = self.compute_memory_cell(d_gate)
         memory_cell = torch.mul(i_gate, c_tilde)

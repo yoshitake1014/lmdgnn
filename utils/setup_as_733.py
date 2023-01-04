@@ -1,7 +1,7 @@
 import os
 
-import pandas as pd
 import networkx as nx
+
 
 routers = {}
 router_id = 0

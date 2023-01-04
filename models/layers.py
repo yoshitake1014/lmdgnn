@@ -59,14 +59,14 @@ class LSTMCell(nn.Module):
         self.input_size = input_size
         self.hidden_size = hidden_size
 
-        self.f_u_gate = nn.Linear(hidden_size, input_size)
-        self.f_w_gate = nn.Linear(input_size, input_size)
-        self.i_u_gate = nn.Linear(hidden_size, input_size)
-        self.i_w_gate = nn.Linear(input_size, input_size)
-        self.o_u_gate = nn.Linear(hidden_size, input_size)
-        self.o_w_gate = nn.Linear(input_size, input_size)
-        self.c_u_gate = nn.Linear(hidden_size, input_size)
-        self.c_w_gate = nn.Linear(input_size, input_size)
+        self.f_u_gate = nn.Linear(hidden_size, hidden_size)
+        self.f_w_gate = nn.Linear(input_size, hidden_size)
+        self.i_u_gate = nn.Linear(hidden_size, hidden_size)
+        self.i_w_gate = nn.Linear(input_size, hidden_size)
+        self.o_u_gate = nn.Linear(hidden_size, hidden_size)
+        self.o_w_gate = nn.Linear(input_size, hidden_size)
+        self.c_u_gate = nn.Linear(hidden_size, hidden_size)
+        self.c_w_gate = nn.Linear(input_size, hidden_size)
 
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()

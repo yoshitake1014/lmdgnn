@@ -1,4 +1,4 @@
-from sklearn.metrics import roc_curve, roc_auc_score
+from sklearn.metrics import roc_auc_score
 import torch
 from torch import nn
 
@@ -6,11 +6,11 @@ from models.layers import Encoder, Decoder
 
 
 class DynGEM(nn.Module):
-    def __init__(self, args, num_nodes, hidden_size, emb_size):
+    def __init__(self, input_size, hidden_size, emb_size):
         super(DynGEM, self).__init__()
 
-        self.enc = Encoder(num_nodes, hidden_size, emb_size)
-        self.dec = Decoder(emb_size, hidden_size, num_nodes)
+        self.enc = Encoder(input_size, hidden_size, emb_size)
+        self.dec = Decoder(emb_size, hidden_size, input_size)
 
     def forward(self, x):
         x = self.enc(x)

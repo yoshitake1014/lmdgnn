@@ -3,7 +3,6 @@ import os
 
 import networkx as nx
 import numpy as np
-from sklearn.metrics import roc_curve, roc_auc_score
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
@@ -61,7 +60,7 @@ def main():
     method = args.methods
 
     if method == 'lmdgnn':
-        model = lmdgnn.LMDGNN(args, NUM_NODES, HIDDEN_SIZE, EMB_SIZE)
+        model = lmdgnn.LMDGNN(NUM_NODES, HIDDEN_SIZE, EMB_SIZE)
 
         for i in range(1, TIME_STEP-1):
             graph_1 = graphs[i-1]
@@ -114,7 +113,7 @@ def main():
             lmdgnn.test(test_dataloader, model, NUM_NODES)
 
     elif method == 'dyngem':
-        model = dyngem.DynGEM(args, NUM_NODES, HIDDEN_SIZE, EMB_SIZE)
+        model = dyngem.DynGEM(NUM_NODES, HIDDEN_SIZE, EMB_SIZE)
 
         for i in range(1, TIME_STEP-1):
             graph_1 = graphs[i-1]
@@ -159,7 +158,7 @@ def main():
             dyngem.test(test_dataloader, model)
 
     elif method == 'dynae':
-        model = dynae.DynAE(args, NUM_NODES, HIDDEN_SIZE, EMB_SIZE)
+        model = dynae.DynAE(NUM_NODES, HIDDEN_SIZE, EMB_SIZE)
         lookback = model.lookback
 
         for i in range(1+lookback, TIME_STEP-1):
@@ -219,7 +218,7 @@ def main():
             dynae.test(test_dataloader, model)
 
     elif method == 'dynrnn':
-        model = dynrnn.DynRNN(args)
+        model = dynrnn.DynRNN(NUM_NODES, NUM_NODES)
         lookback = model.lookback
 
         for i in range(1+lookback, TIME_STEP-1):

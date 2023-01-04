@@ -1,5 +1,4 @@
-import networkx as nx
-from sklearn.metrics import roc_curve, roc_auc_score
+from sklearn.metrics import roc_auc_score
 import torch
 from torch import nn
 
@@ -7,12 +6,12 @@ from models.layers import Encoder, Decoder
 
 
 class DynAE(nn.Module):
-    def __init__(self, args, num_nodes, hidden_size, emb_size):
+    def __init__(self, input_size, hidden_size, emb_size):
         super(DynAE, self).__init__()
         self.lookback = 2
 
-        self.enc = Encoder(num_nodes*(1+self.lookback), hidden_size, emb_size)
-        self.dec = Decoder(emb_size, hidden_size, num_nodes)
+        self.enc = Encoder(input_size*(1+self.lookback), hidden_size, emb_size)
+        self.dec = Decoder(emb_size, hidden_size, input_size)
 
     def forward(self, x):
         x = self.enc(x)

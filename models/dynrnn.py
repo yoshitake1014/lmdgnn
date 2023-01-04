@@ -1,4 +1,4 @@
-from sklearn.metrics import roc_curve, roc_auc_score
+from sklearn.metrics import roc_auc_score
 import torch
 from torch import nn
 
@@ -6,17 +6,22 @@ from models.layers import LSTM
 
 
 class DynRNN(nn.Module):
-    def __init__(self, args):
+    def __init__(self, input_size, hidden_size):
         super(DynRNN, self).__init__()
         self.lookback = 2
 
-        self.lstm = LSTM()
+        self.lstm = LSTM(input_size*(1+self.lookback), hidden_size)
+
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
-        x = self.lstm(x)
-        x = self.sigmoid(x)
-        return x
+        batch_size = x.size(0)
+        res = torch.Tensor()
+        for batch in range(batch_size):
+            tmp = self.lstm(x[batch])
+            res = torch.cat([res, tmp], dim=0)
+        res = torch.reshape(res, (-1, x.size(0)))
+        return res
 
 
 def train(dataloader, model, loss_fn, optimizer):
