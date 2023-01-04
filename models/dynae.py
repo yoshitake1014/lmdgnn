@@ -9,7 +9,6 @@ from models.layers import Encoder, Decoder
 class DynAE(nn.Module):
     def __init__(self, args, num_nodes, hidden_size, emb_size):
         super(DynAE, self).__init__()
-
         self.lookback = 2
 
         self.enc = Encoder(num_nodes*(1+self.lookback), hidden_size, emb_size)
@@ -19,6 +18,7 @@ class DynAE(nn.Module):
         x = self.enc(x)
         x = self.dec(x)
         return x
+
 
 def train(dataloader, model, loss_fn, optimizer):
     size = len(dataloader.dataset)

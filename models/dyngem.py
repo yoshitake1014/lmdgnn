@@ -1,4 +1,3 @@
-import networkx as nx
 from sklearn.metrics import roc_curve, roc_auc_score
 import torch
 from torch import nn

@@ -1,17 +1,15 @@
 import argparse
 import os
 
-import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
-import pandas as pd
 from sklearn.metrics import roc_curve, roc_auc_score
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
 from models import lmdgnn, dynaernn, dynrnn, dynae, dyngem
-from utils import loss_function as lf
+from utils import graph_utils
 
 
 parser = argparse.ArgumentParser()
@@ -24,23 +22,36 @@ def main():
     dataset = args.datasets
 
     if dataset == 'as':
-        BATCH_SIZE = 500
         EMB_SIZE = 150
-        EPOCH = 1
+        #EPOCH = 1
         HIDDEN_SIZE = [500, 300,]
-        NUM_NODES = 7716
-        #L2 = 1e-2
+        #NUM_NODES = 7716
         #LEARNING_RATE = 1e-3
-        SAMPLE_SIZE = 500
+        SAMPLE_SIZE = 2000
         #TIME_STEP = 733
         TIME_STEP = 50
 
+        BATCH_SIZE = SAMPLE_SIZE
+        NUM_NODES = SAMPLE_SIZE
+
         listdir = os.listdir('datasets/as_733')
         listdir.sort()
+
         graphs = []
+
         for i in range(TIME_STEP):
             G = nx.read_gpickle(f'datasets/as_733/month_{i+1}_graph.gpickle')
             graphs.append(G)
+
+        G_cen = nx.degree_centrality(graphs[-1])
+        G_cen = sorted(G_cen.items(), key=lambda item:item[1], reverse=True)
+
+        node_l = []
+        for i in range(SAMPLE_SIZE):
+            node_l.append(G_cen[i][0])
+
+        for i in range(TIME_STEP):
+            graphs[i] = graph_utils.sample_graph_nodes(graphs[i], node_l)
 
     elif dataset == 'hep':
         pass
@@ -57,9 +68,6 @@ def main():
             graph_2 = graphs[i]
             graph_3 = graphs[i+1]
 
-            G_cen = nx.degree_centrality(graph_1)
-            G_cen = sorted(G_cen.items(), key=lambda item:item[1], reverse=True)
-
             nodes_1 = []
             nodes_2 = []
             nodes_3 = []
@@ -67,13 +75,12 @@ def main():
                 x = [0]*(NUM_NODES+1)
                 y = [0]*(NUM_NODES+1)
                 z = [0]*(NUM_NODES+1)
-                node = G_cen[j][0]
-                x[NUM_NODES] = node
-                y[NUM_NODES] = node
-                z[NUM_NODES] = node
-                neighbors_1 = graph_1.neighbors(node)
-                neighbors_2 = graph_2.neighbors(node)
-                neighbors_3 = graph_3.neighbors(node)
+                x[NUM_NODES] = j
+                y[NUM_NODES] = j
+                z[NUM_NODES] = j
+                neighbors_1 = graph_1.neighbors(j)
+                neighbors_2 = graph_2.neighbors(j)
+                neighbors_3 = graph_3.neighbors(j)
                 for k in neighbors_1:
                     x[k] = 1
                 nodes_1.append(x)
@@ -100,7 +107,7 @@ def main():
             loss_fn = nn.MSELoss()
             #optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
             optimizer = torch.optim.Adam(model.parameters())
-            #optimizer = torch.optim.Adam(model.parameters(), weight_decay=L2)
+            #optimizer = torch.optim.Adam(model.parameters(), weight_decay=1e-2)
 
             print(f'Timestep: {i}')
             lmdgnn.train(train_dataloader, model, loss_fn, optimizer, NUM_NODES)
@@ -114,9 +121,6 @@ def main():
             graph_2 = graphs[i]
             graph_3 = graphs[i+1]
 
-            G_cen = nx.degree_centrality(graph_1)
-            G_cen = sorted(G_cen.items(), key=lambda item:item[1], reverse=True)
-
             nodes_1 = []
             nodes_2 = []
             nodes_3 = []
@@ -124,10 +128,9 @@ def main():
                 x = [0]*(NUM_NODES)
                 y = [0]*(NUM_NODES)
                 z = [0]*(NUM_NODES)
-                node = G_cen[j][0]
-                neighbors_1 = graph_1.neighbors(node)
-                neighbors_2 = graph_2.neighbors(node)
-                neighbors_3 = graph_3.neighbors(node)
+                neighbors_1 = graph_1.neighbors(j)
+                neighbors_2 = graph_2.neighbors(j)
+                neighbors_3 = graph_3.neighbors(j)
                 for k in neighbors_1:
                     x[k] = 1
                 nodes_1.append(x)
@@ -171,14 +174,11 @@ def main():
             nodes_1 = [list() for _ in range(SAMPLE_SIZE)]
             nodes_2_1 = [list() for _ in range(SAMPLE_SIZE)]
             for j in range(1+lookback):
-                G_cen = nx.degree_centrality(graph_1[j])
-                G_cen = sorted(G_cen.items(), key=lambda item:item[1], reverse=True)
                 for k in range(SAMPLE_SIZE):
                     x = [0]*(NUM_NODES)
                     y = [0]*(NUM_NODES)
-                    node = G_cen[k][0]
-                    neighbors_1 = graph_1[j].neighbors(node)
-                    neighbors_2_1 = graph_2_1[j].neighbors(node)
+                    neighbors_1 = graph_1[j].neighbors(j)
+                    neighbors_2_1 = graph_2_1[j].neighbors(j)
                     for l in neighbors_1:
                         x[l] = 1
                     nodes_1[k].extend(x)
@@ -190,8 +190,68 @@ def main():
             for j in range(SAMPLE_SIZE):
                 x = [0]*(NUM_NODES)
                 y = [0]*(NUM_NODES)
-                neighbors_2_2 = graph_2_2.neighbors(node)
-                neighbors_3 = graph_3.neighbors(node)
+                neighbors_2_2 = graph_2_2.neighbors(j)
+                neighbors_3 = graph_3.neighbors(j)
+                for k in neighbors_2_2:
+                    x[k] = 1
+                nodes_2_2.append(x)
+                for k in neighbors_3:
+                    y[k] = 1
+                nodes_3.append(y)
+
+            X = torch.Tensor(nodes_1)
+            Y = torch.Tensor(nodes_2_2)
+
+            _X = torch.Tensor(nodes_2_1)
+            _Y = torch.Tensor(nodes_3)
+
+            train_dataset = TensorDataset(X,Y)
+            test_dataset = TensorDataset(_X,_Y)
+
+            train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE)
+            test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE)
+
+            loss_fn = nn.MSELoss()
+            optimizer = torch.optim.Adam(model.parameters())
+
+            print(f'Timestep: {i}')
+            dynae.train(train_dataloader, model, loss_fn, optimizer)
+            dynae.test(test_dataloader, model)
+
+    elif method == 'dynrnn':
+        model = dynrnn.DynRNN(args)
+        lookback = model.lookback
+
+        for i in range(1+lookback, TIME_STEP-1):
+            graph_1 = []
+            graph_2_1 = []
+            for j in range(lookback+1):
+                graph_1.append(graphs[i-j-1])
+                graph_2_1.append(graphs[i-j])
+            graph_2_2 = graphs[i]
+            graph_3 = graphs[i+1]
+
+            nodes_1 = [list() for _ in range(SAMPLE_SIZE)]
+            nodes_2_1 = [list() for _ in range(SAMPLE_SIZE)]
+            for j in range(1+lookback):
+                for k in range(SAMPLE_SIZE):
+                    x = [0]*(NUM_NODES)
+                    y = [0]*(NUM_NODES)
+                    neighbors_1 = graph_1[j].neighbors(j)
+                    neighbors_2_1 = graph_2_1[j].neighbors(j)
+                    for l in neighbors_1:
+                        x[l] = 1
+                    nodes_1[k].extend(x)
+                    for l in neighbors_2_1:
+                        y[l] = 1
+                    nodes_2_1[k].extend(y)
+            nodes_2_2 = []
+            nodes_3 = []
+            for j in range(SAMPLE_SIZE):
+                x = [0]*(NUM_NODES)
+                y = [0]*(NUM_NODES)
+                neighbors_2_2 = graph_2_2.neighbors(j)
+                neighbors_3 = graph_3.neighbors(j)
                 for k in neighbors_2_2:
                     x[k] = 1
                 nodes_2_2.append(x)

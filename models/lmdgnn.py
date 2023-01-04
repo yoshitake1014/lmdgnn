@@ -1,7 +1,6 @@
 from collections import deque
 from math import gamma
 
-import networkx as nx
 from sklearn.metrics import roc_curve, roc_auc_score
 import torch
 from torch import nn
@@ -143,7 +142,8 @@ class MLSTMCell(nn.Module):
         self.i_c_tilde.pop()
         self.i_c_tilde.appendleft(torch.mul(i_gate, c_tilde))
 
-        memory_cell = self.compute_memory_cell(d_gate)
+        #memory_cell = self.compute_memory_cell(d_gate)
+        memory_cell = torch.mul(i_gate, c_tilde)
         hidden_state = torch.mul(o_gate, self.tanh(memory_cell))
 
         return hidden_state, memory_cell
