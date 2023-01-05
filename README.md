@@ -13,7 +13,6 @@ This repository is the implementation of the experiments in the following paper:
 ## Datasets
 Datasets used in this paper are as follows:
 - Autonomous Systems: Available from http://snap.stanford.edu/data/as-733.html
-- HEP-PH: Available from http://snap.stanford.edu/data/cit-HepPh.html
 
 ## Methods
 Baseline Methods used in this paper are as follows:

@@ -1,7 +1,7 @@
 from collections import deque
 from math import gamma
 
-from sklearn.metrics import roc_auc_score
+from sklearn import metrics
 import torch
 from torch import nn
 
@@ -172,8 +172,6 @@ def test(dataloader, model, num_nodes):
 
     model.eval()
 
-    #y_true = np.ndarray(0)
-    #y_score = np.ndarray(0)
     with torch.no_grad():
         for i, (X,y) in enumerate(dataloader):
             y = y[:, :num_nodes].to(torch.float32)
@@ -181,11 +179,13 @@ def test(dataloader, model, num_nodes):
 
             pred = model(X).to('cpu').detach().numpy().copy().flatten()
 
-            #y_true = np.concatenate([y_true, y])
-            #y_score = np.concatenate([y_score, pred])
+            fpr, tpr, thresholds = metrics.roc_curve(y, pred)
+            auc = metrics.auc(fpr, tpr)
 
-            auc, current = roc_auc_score(y, pred), (i+1)*len(X)
+            precision, recall, thresholds = metrics.precision_recall_curve(y, pred)
+            prauc = metrics.auc(recall, precision)
+
+            current = (i+1)*len(X)
+
             print(f'AUC: {auc} [{current}/{size}]')
-
-    #auc = roc_auc_score(y_true, y_score)
-    #print(f'AUC: {auc}')
+            print(f'PRAUC: {prauc} [{current}/{size}]')

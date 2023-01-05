@@ -1,4 +1,4 @@
-from sklearn.metrics import roc_auc_score
+from sklearn import metrics
 import torch
 from torch import nn
 
@@ -54,5 +54,13 @@ def test(dataloader, model):
 
             pred = model(X).to('cpu').detach().numpy().copy().flatten()
 
-            auc, current = roc_auc_score(y, pred), (i+1)*len(X)
+            fpr, tpr, thresholds = metrics.roc_curve(y, pred)
+            auc = metrics.auc(fpr, tpr)
+
+            precision, recall, thresholds = metrics.precision_recall_curve(y, pred)
+            prauc = metrics.auc(recall, precision)
+
+            current = (i+1)*len(X)
+
             print(f'AUC: {auc} [{current}/{size}]')
+            print(f'PRAUC: {prauc} [{current}/{size}]')
