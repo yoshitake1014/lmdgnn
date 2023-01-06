@@ -182,10 +182,8 @@ def test(dataloader, model, num_nodes):
             fpr, tpr, thresholds = metrics.roc_curve(y, pred)
             auc = metrics.auc(fpr, tpr)
 
-
             precision, recall, thresholds = metrics.precision_recall_curve(y, pred)
             prauc = metrics.auc(recall, precision)
-
 
             current = (i+1)*len(X)
 

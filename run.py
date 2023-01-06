@@ -69,7 +69,7 @@ def main():
         graphs = []
 
         for i in range(TIME_STEP):
-            G = nx.read_gpickle(f'datasets/as_caida/{i+1}_graph.gpickle')
+            G = nx.read_gpickle(f'datasets/as_caida/month_{i+1}_graph.gpickle')
             graphs.append(G)
 
         G_cen = nx.degree_centrality(graphs[-1])
