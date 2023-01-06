@@ -22,7 +22,7 @@ for i in listdir:
             if node_j not in routers:
                 routers[node_j] = router_id
                 router_id += 1
-            G.add_edge(routers[node_i],routers[node_j],weight=1)
-        file_name = f'../datasets/as_caida/{file_no}_graph.gpickle'
+            G.add_edge(routers[node_i], routers[node_j], weight=1)
+        file_name = f'../datasets/as_caida/month_{file_no}_graph.gpickle'
         nx.write_gpickle(G,file_name)
         file_no += 1

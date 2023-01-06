@@ -52,8 +52,66 @@ def main():
         for i in range(TIME_STEP):
             graphs[i] = graph_utils.sample_graph_nodes(graphs[i], node_l)
 
-    elif dataset == '':
-        pass
+    elif dataset == 'caida':
+        EMB_SIZE = 150
+        HIDDEN_SIZE = [500, 300,]
+        #NUM_NODES = 31379
+        SAMPLE_SIZE = 2000
+        #TIME_STEP = 122
+        TIME_STEP = 50
+
+        BATCH_SIZE = SAMPLE_SIZE
+        NUM_NODES = SAMPLE_SIZE
+
+        listdir = os.listdir('datasets/as_caida')
+        listdir.sort()
+
+        graphs = []
+
+        for i in range(TIME_STEP):
+            G = nx.read_gpickle(f'datasets/as_caida/{i+1}_graph.gpickle')
+            graphs.append(G)
+
+        G_cen = nx.degree_centrality(graphs[-1])
+        G_cen = sorted(G_cen.items(), key=lambda item:item[1], reverse=True)
+
+        node_l = []
+        for i in range(SAMPLE_SIZE):
+            node_l.append(G_cen[i][0])
+
+        for i in range(TIME_STEP):
+            graphs[i] = graph_utils.sample_graph_nodes(graphs[i], node_l)
+
+    elif dataset == 'lkml':
+        EMB_SIZE = 150
+        HIDDEN_SIZE = [500, 300,]
+        #NUM_NODES = 27927
+        SAMPLE_SIZE = 2000
+        #TIME_STEP = 96
+        TIME_STEP = 50
+
+        BATCH_SIZE = SAMPLE_SIZE
+        NUM_NODES = SAMPLE_SIZE
+
+        listdir = os.listdir('datasets/lkml_reply')
+        listdir.sort()
+
+        graphs = []
+
+        for i in range(TIME_STEP):
+            G = nx.read_gpickle(f'datasets/lkml_reply/month_{i+1}_graph.gpickle')
+            graphs.append(G)
+
+        G_cen = nx.degree_centrality(graphs[-1])
+        G_cen = sorted(G_cen.items(), key=lambda item:item[1], reverse=True)
+
+        node_l = []
+        for i in range(SAMPLE_SIZE):
+            node_l.append(G_cen[i][0])
+
+        for i in range(TIME_STEP):
+            graphs[i] = graph_utils.sample_graph_nodes(graphs[i], node_l)
+
     else:
         pass
 
