@@ -179,13 +179,15 @@ def test(dataloader, model, num_nodes):
 
             pred = model(X).to('cpu').detach().numpy().copy().flatten()
 
-            fpr, tpr, thresholds = metrics.roc_curve(y, pred)
+            fpr, tpr, thresholds_roc = metrics.roc_curve(y, pred)
             auc = metrics.auc(fpr, tpr)
 
-            precision, recall, thresholds = metrics.precision_recall_curve(y, pred)
+            precision, recall, thresholds_pr = metrics.precision_recall_curve(y, pred)
             prauc = metrics.auc(recall, precision)
 
             current = (i+1)*len(X)
 
             print(f'AUC: {auc} [{current}/{size}]')
             print(f'PRAUC: {prauc} [{current}/{size}]')
+
+    return (auc, fpr, tpr, thresholds_roc), (prauc, recall, precision, thresholds_pr)

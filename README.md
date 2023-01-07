@@ -13,6 +13,8 @@ This repository is the implementation of the experiments in the following paper:
 ## Datasets
 Datasets used in this paper are as follows:
 - Autonomous Systems: Available from http://snap.stanford.edu/data/as-733.html
+- CAIDA: Available from http://snap.stanford.edu/data/as-Caida.html
+- LKML: Available from http://konect.cc/networks/lkml-reply/
 
 ## Methods
 Baseline Methods used in this paper are as follows:
